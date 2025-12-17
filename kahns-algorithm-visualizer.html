@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khan's Algorithm - Topological Sort Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .code-line {
+            transition: all 0.3s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .code-line.active {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            font-weight: 600;
+        }
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .node:hover {
+            transform: scale(1.1);
+        }
+        .edge {
+            stroke: #6b7280;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .graph-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .control-btn {
+            transition: all 0.2s ease;
+        }
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .control-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Khan's Algorithm Visualizer</h1>
+            <p class="text-gray-600">Topological Sort using Decrease and Conquer Strategy</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Panel - Pseudocode and Controls -->
+            <div class="space-y-6">
+                <!-- Pseudocode -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Pseudocode</h2>
+                    <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm space-y-1">
+                        <div class="code-line" data-line="0">function KahnsAlgorithm(graph):</div>
+                        <div class="code-line" data-line="1">&nbsp;&nbsp;inDegree[] = calculate in-degrees</div>
+                        <div class="code-line" data-line="2">&nbsp;&nbsp;queue = empty queue</div>
+                        <div class="code-line" data-line="3">&nbsp;&nbsp;result = empty list</div>
+                        <div class="code-line" data-line="4">&nbsp;&nbsp;</div>
+                        <div class="code-line" data-line="5">&nbsp;&nbsp;for each vertex v:</div>
+                        <div class="code-line" data-line="6">&nbsp;&nbsp;&nbsp;&nbsp;if inDegree[v] == 0:</div>
+                        <div class="code-line" data-line="7">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;queue.enqueue(v)</div>
+                        <div class="code-line" data-line="8">&nbsp;&nbsp;</div>
+                        <div class="code-line" data-line="9">&nbsp;&nbsp;while queue not empty:</div>
+                        <div class="code-line" data-line="10">&nbsp;&nbsp;&nbsp;&nbsp;u = queue.dequeue()</div>
+                        <div class="code-line" data-line="11">&nbsp;&nbsp;&nbsp;&nbsp;result.append(u)</div>
+                        <div class="code-line" data-line="12">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                        <div class="code-line" data-line="13">&nbsp;&nbsp;&nbsp;&nbsp;for each neighbor v of u:</div>
+                        <div class="code-line" data-line="14">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inDegree[v]--</div>
+                        <div class="code-line" data-line="15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if inDegree[v] == 0:</div>
+                        <div class="code-line" data-line="16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;queue.enqueue(v)</div>
+                        <div class="code-line" data-line="17">&nbsp;&nbsp;</div>
+                        <div class="code-line" data-line="18">&nbsp;&nbsp;return result</div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Controls</h2>
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <button id="playBtn" class="control-btn bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold">
+                            ▶ Play
+                        </button>
+                        <button id="pauseBtn" class="control-btn bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-semibold" disabled>
+                            ⏸ Pause
+                        </button>
+                        <button id="stepBtn" class="control-btn bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
+                            ⏭ Step
+                        </button>
+                        <button id="resetBtn" class="control-btn bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">
+                            🔄 Reset
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Animation Speed</label>
+                        <input id="speedSlider" type="range" min="500" max="3000" value="1500" step="100" class="w-full">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Fast</span>
+                            <span>Slow</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Algorithm Info -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Algorithm Analysis</h2>
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="font-semibold text-blue-900">Time Complexity:</p>
+                            <p class="text-blue-800">O(V + E) where V = vertices, E = edges</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <p class="font-semibold text-purple-900">Space Complexity:</p>
+                            <p class="text-purple-800">O(V) for queue and in-degree array</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="font-semibold text-green-900">Strategy:</p>
+                            <p class="text-green-800">Decrease and Conquer - repeatedly remove vertices with no dependencies</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Visualization -->
+            <div class="space-y-6">
+                <!-- Graph Visualization -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Graph Visualization</h2>
+                    <svg id="graphSvg" class="w-full h-96 border-2 border-gray-200 rounded-lg">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#6b7280" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+
+                <!-- Status Panel -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Execution Status</h2>
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-700">Current Step:</p>
+                            <p id="stepCounter" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-700">Step Description:</p>
+                            <p id="stepDescription" class="text-gray-900">Click Play or Step to begin</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-700">Queue:</p>
+                            <p id="queueDisplay" class="text-gray-900 font-mono">[]</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-700">Topological Order:</p>
+                            <p id="resultDisplay" class="text-gray-900 font-mono">[]</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-semibold text-gray-700">In-Degrees:</p>
+                            <p id="inDegreeDisplay" class="text-gray-900 font-mono text-sm"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Graph representation - DAG example
+        const graph = {
+            nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
+            edges: [
+                ['A', 'C'],
+                ['A', 'D'],
+                ['B', 'D'],
+                ['B', 'E'],
+                ['C', 'F'],
+                ['D', 'F'],
+                ['E', 'F']
+            ]
+        };
+
+        // Node positions for visualization
+        const nodePositions = {
+            'A': { x: 100, y: 50 },
+            'B': { x: 100, y: 150 },
+            'C': { x: 250, y: 50 },
+            'D': { x: 250, y: 150 },
+            'E': { x: 250, y: 250 },
+            'F': { x: 400, y: 150 }
+        };
+
+        // Algorithm state
+        let algorithmState = {
+            inDegree: {},
+            queue: [],
+            result: [],
+            processed: new Set(),
+            currentNode: null,
+            currentNeighbors: [],
+            step: 0,
+            isRunning: false,
+            isPaused: false
+        };
+
+        let animationSpeed = 1500;
+        let steps = [];
+        let currentStepIndex = 0;
+
+        // Initialize
+        function init() {
+            drawGraph();
+            generateSteps();
+            updateDisplay();
+        }
+
+        // Draw the graph
+        function drawGraph() {
+            const svg = document.getElementById('graphSvg');
+            svg.innerHTML = '<defs><marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#6b7280" /></marker></defs>';
+
+            // Draw edges
+            graph.edges.forEach(([from, to]) => {
+                const fromPos = nodePositions[from];
+                const toPos = nodePositions[to];
+                
+                // Calculate angle for arrow offset
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const angle = Math.atan2(dy, dx);
+                const offset = 30;
+                
+                const startX = fromPos.x + offset * Math.cos(angle);
+                const startY = fromPos.y + offset * Math.sin(angle);
+                const endX = toPos.x - offset * Math.cos(angle);
+                const endY = toPos.y - offset * Math.sin(angle);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', startY);
+                line.setAttribute('x2', endX);
+                line.setAttribute('y2', endY);
+                line.setAttribute('class', 'edge');
+                line.setAttribute('id', `edge-${from}-${to}`);
+                svg.appendChild(line);
+            });
+
+            // Draw nodes
+            graph.nodes.forEach(node => {
+                const pos = nodePositions[node];
+                
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', pos.x);
+                circle.setAttribute('cy', pos.y);
+                circle.setAttribute('r', 25);
+                circle.setAttribute('fill', '#3b82f6');
+                circle.setAttribute('stroke', '#1e40af');
+                circle.setAttribute('stroke-width', 2);
+                circle.setAttribute('class', 'node');
+                circle.setAttribute('id', `node-${node}`);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', pos.x);
+                text.setAttribute('y', pos.y);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-size', '18');
+                text.setAttribute('font-weight', 'bold');
+                text.textContent = node;
+                text.setAttribute('id', `text-${node}`);
+                
+                svg.appendChild(circle);
+                svg.appendChild(text);
+            });
+        }
+
+        // Generate execution steps
+        function generateSteps() {
+            steps = [];
+            const inDegree = {};
+            const queue = [];
+            const result = [];
+            const adjList = {};
+
+            // Initialize
+            graph.nodes.forEach(node => {
+                inDegree[node] = 0;
+                adjList[node] = [];
+            });
+
+            graph.edges.forEach(([from, to]) => {
+                adjList[from].push(to);
+                inDegree[to]++;
+            });
+
+            steps.push({
+                line: 1,
+                description: 'Calculate in-degrees for all vertices',
+                inDegree: {...inDegree},
+                queue: [...queue],
+                result: [...result],
+                highlight: []
+            });
+
+            // Find vertices with in-degree 0
+            graph.nodes.forEach(node => {
+                if (inDegree[node] === 0) {
+                    queue.push(node);
+                    steps.push({
+                        line: 7,
+                        description: `Add vertex ${node} to queue (in-degree = 0)`,
+                        inDegree: {...inDegree},
+                        queue: [...queue],
+                        result: [...result],
+                        highlight: [node]
+                    });
+                }
+            });
+
+            // Process queue
+            while (queue.length > 0) {
+                const u = queue.shift();
+                
+                steps.push({
+                    line: 10,
+                    description: `Dequeue vertex ${u}`,
+                    inDegree: {...inDegree},
+                    queue: [...queue],
+                    result: [...result],
+                    highlight: [u],
+                    current: u
+                });
+
+                result.push(u);
+                
+                steps.push({
+                    line: 11,
+                    description: `Add ${u} to topological order`,
+                    inDegree: {...inDegree},
+                    queue: [...queue],
+                    result: [...result],
+                    highlight: [u],
+                    processed: u
+                });
+
+                // Process neighbors
+                adjList[u].forEach(v => {
+                    inDegree[v]--;
+                    
+                    steps.push({
+                        line: 14,
+                        description: `Decrease in-degree of ${v} (neighbor of ${u})`,
+                        inDegree: {...inDegree},
+                        queue: [...queue],
+                        result: [...result],
+                        highlight: [v],
+                        edge: [u, v]
+                    });
+
+                    if (inDegree[v] === 0) {
+                        queue.push(v);
+                        steps.push({
+                            line: 16,
+                            description: `Add vertex ${v} to queue (in-degree = 0)`,
+                            inDegree: {...inDegree},
+                            queue: [...queue],
+                            result: [...result],
+                            highlight: [v]
+                        });
+                    }
+                });
+            }
+
+            steps.push({
+                line: 18,
+                description: 'Algorithm complete! Topological order found.',
+                inDegree: {...inDegree},
+                queue: [...queue],
+                result: [...result],
+                highlight: [],
+                complete: true
+            });
+        }
+
+        // Update display
+        function updateDisplay() {
+            const step = steps[currentStepIndex];
+            if (!step) return;
+
+            // Update step counter and description
+            document.getElementById('stepCounter').textContent = currentStepIndex + 1;
+            document.getElementById('stepDescription').textContent = step.description;
+            document.getElementById('queueDisplay').textContent = JSON.stringify(step.queue);
+            document.getElementById('resultDisplay').textContent = JSON.stringify(step.result);
+            
+            // Update in-degree display
+            const inDegreeText = Object.entries(step.inDegree)
+                .map(([node, deg]) => `${node}:${deg}`)
+                .join(', ');
+            document.getElementById('inDegreeDisplay').textContent = inDegreeText;
+
+            // Highlight code line
+            document.querySelectorAll('.code-line').forEach(line => {
+                line.classList.remove('active');
+            });
+            document.querySelector(`[data-line="${step.line}"]`)?.classList.add('active');
+
+            // Update graph visualization
+            graph.nodes.forEach(node => {
+                const circle = document.getElementById(`node-${node}`);
+                const text = document.getElementById(`text-${node}`);
+                
+                if (step.processed === node) {
+                    gsap.to(circle, { fill: '#10b981', stroke: '#059669', duration: 0.5 });
+                } else if (step.current === node) {
+                    gsap.to(circle, { fill: '#f59e0b', stroke: '#d97706', duration: 0.5 });
+                } else if (step.highlight.includes(node)) {
+                    gsap.to(circle, { fill: '#8b5cf6', stroke: '#7c3aed', duration: 0.5 });
+                } else if (step.result.includes(node)) {
+                    gsap.to(circle, { fill: '#10b981', stroke: '#059669', duration: 0.5 });
+                } else if (step.queue.includes(node)) {
+                    gsap.to(circle, { fill: '#eab308', stroke: '#ca8a04', duration: 0.5 });
+                } else {
+                    gsap.to(circle, { fill: '#3b82f6', stroke: '#1e40af', duration: 0.5 });
+                }
+            });
+
+            // Highlight edge if specified
+            if (step.edge) {
+                const [from, to] = step.edge;
+                const edge = document.getElementById(`edge-${from}-${to}`);
+                if (edge) {
+                    gsap.to(edge, { stroke: '#f59e0b', strokeWidth: 4, duration: 0.3 });
+                    setTimeout(() => {
+                        gsap.to(edge, { stroke: '#6b7280', strokeWidth: 2, duration: 0.3 });
+                    }, 800);
+                }
+            }
+        }
+
+        // Control functions
+        function play() {
+            if (currentStepIndex >= steps.length - 1) {
+                reset();
+            }
+            algorithmState.isRunning = true;
+            algorithmState.isPaused = false;
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            runStep();
+        }
+
+        function pause() {
+            algorithmState.isRunning = false;
+            algorithmState.isPaused = true;
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+        }
+
+        function step() {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                updateDisplay();
+            }
+        }
+
+        function reset() {
+            currentStepIndex = 0;
+            algorithmState.isRunning = false;
+            algorithmState.isPaused = false;
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            updateDisplay();
+        }
+
+        function runStep() {
+            if (!algorithmState.isRunning || currentStepIndex >= steps.length - 1) {
+                algorithmState.isRunning = false;
+                document.getElementById('playBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+                return;
+            }
+
+            currentStepIndex++;
+            updateDisplay();
+
+            setTimeout(() => {
+                if (algorithmState.isRunning) {
+                    runStep();
+                }
+            }, animationSpeed);
+        }
+
+        // Event listeners
+        document.getElementById('playBtn').addEventListener('click', play);
+        document.getElementById('pauseBtn').addEventListener('click', pause);
+        document.getElementById('stepBtn').addEventListener('click', step);
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
